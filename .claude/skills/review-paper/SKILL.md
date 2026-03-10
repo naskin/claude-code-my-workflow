@@ -1,7 +1,7 @@
 ---
 name: review-paper
-description: Comprehensive manuscript review covering argument structure, econometric specification, citation completeness, and potential referee objections
-argument-hint: "[paper filename in master_supporting_docs/ or path to .tex/.pdf]"
+description: Comprehensive manuscript review covering argument structure, research design, empirical methods, citation completeness, and potential referee objections
+argument-hint: "[paper filename in master_supporting_docs/ or path to .pdf/.tex/.docx]"
 allowed-tools: ["Read", "Grep", "Glob", "Write", "Task"]
 ---
 
@@ -9,7 +9,7 @@ allowed-tools: ["Read", "Grep", "Glob", "Write", "Task"]
 
 Produce a thorough, constructive review of an academic manuscript — the kind of report a top-journal referee would write.
 
-**Input:** `$ARGUMENTS` — path to a paper (.tex, .pdf, or .qmd), or a filename in `master_supporting_docs/`.
+**Input:** `$ARGUMENTS` — path to a paper (.pdf, .tex, .docx), or a filename in `master_supporting_docs/`.
 
 ---
 
@@ -41,19 +41,22 @@ Produce a thorough, constructive review of an academic manuscript — the kind o
 - Are the conclusions supported by the evidence?
 - Are limitations acknowledged?
 
-### 2. Identification Strategy
-- Is the causal claim credible?
+### 2. Research Design
+- Is the research design appropriate for the question?
 - What are the key identifying assumptions? Are they stated explicitly?
-- Are there threats to identification (omitted variables, reverse causality, measurement error)?
-- Are robustness checks adequate?
-- Is the estimator appropriate for the research design?
+- Are there threats to validity (internal, external, construct)?
+- For causal claims: is the identification strategy credible (selection on observables, IV, RD, DiD, experiments)?
+- For descriptive/qualitative work: is the sampling strategy justified?
+- Are robustness checks or sensitivity analyses adequate?
 
-### 3. Econometric Specification
+### 3. Empirical Methods
+- Are the statistical/analytical methods appropriate for the data and question?
 - Correct standard errors (clustered? robust? bootstrap?)?
-- Appropriate functional form?
-- Sample selection issues?
+- Appropriate functional form or model specification?
+- Sample selection or attrition issues?
 - Multiple testing concerns?
-- Are point estimates economically meaningful (not just statistically significant)?
+- Are effect sizes substantively meaningful (not just statistically significant)?
+- For qualitative methods: is the coding/analysis systematic and transparent?
 
 ### 4. Literature Positioning
 - Are the key papers cited?
@@ -100,7 +103,7 @@ Produce a thorough, constructive review of an academic manuscript — the kind o
 ## Major Concerns
 
 ### MC1: [Title]
-- **Dimension:** [Identification / Econometrics / Argument / Literature / Writing / Presentation]
+- **Dimension:** [Research Design / Methods / Argument / Literature / Writing / Presentation]
 - **Issue:** [Specific description]
 - **Suggestion:** [How to address it]
 - **Location:** [Section/page/table if applicable]
@@ -134,8 +137,8 @@ These are the tough questions a top referee would likely raise:
 | Dimension | Rating (1-5) |
 |-----------|-------------|
 | Argument Structure | [N] |
-| Identification | [N] |
-| Econometrics | [N] |
+| Research Design | [N] |
+| Empirical Methods | [N] |
 | Literature | [N] |
 | Writing | [N] |
 | Presentation | [N] |
@@ -148,7 +151,7 @@ These are the tough questions a top referee would likely raise:
 
 - **Be constructive.** Every criticism should come with a suggestion.
 - **Be specific.** Reference exact sections, equations, tables.
-- **Think like a referee at a top-5 journal.** What would make them reject?
+- **Think like a referee at a top journal.** What would make them reject?
 - **Distinguish fatal flaws from minor issues.** Not everything is equally important.
 - **Acknowledge what's done well.** Good research deserves recognition.
 - **Do NOT fabricate details.** If you can't read a section clearly, say so.

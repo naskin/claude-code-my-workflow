@@ -18,7 +18,7 @@ Run an end-to-end data analysis in R: load, explore, analyze, and produce public
 - **Follow R code conventions** in `.claude/rules/r-code-conventions.md`
 - **Save all scripts** to `scripts/R/` with descriptive names
 - **Save all outputs** (figures, tables, RDS) to `output/`
-- **Use `saveRDS()`** for every computed object — Quarto slides may need them
+- **Use `saveRDS()`** for every computed object — presentation slides may need them
 - **Use project theme** for all figures (check for custom theme in `.claude/rules/`)
 - **Run r-reviewer** on the generated script before presenting results
 
@@ -62,7 +62,7 @@ Based on the research question:
 
 **Figures:**
 - Use `ggplot2` with project theme
-- Set `bg = "transparent"` for Beamer compatibility
+- Set `bg = "transparent"` for presentation compatibility
 - Include proper axis labels (sentence case, units)
 - Export with explicit dimensions: `ggsave(width = X, height = Y)`
 - Save as both `.pdf` and `.png`

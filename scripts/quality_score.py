@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Quality Scoring System for Academic Course Materials
+Quality Scoring System for Academic Research Materials
 
 Calculates objective quality scores (0-100) based on defined rubrics.
 Enforces quality gates: 80 (commit), 90 (PR), 95 (excellence).
 
 Usage:
-    python scripts/quality_score.py Quarto/Lecture6_Topic.qmd
-    python scripts/quality_score.py Quarto/Lecture6_Topic.qmd --summary
-    python scripts/quality_score.py Quarto/*.qmd
-    python scripts/quality_score.py Slides/Lecture01_Topic.tex
-    python scripts/quality_score.py scripts/R/Lecture06_simulations.R
+    python scripts/quality_score.py scripts/R/analysis.R
+    python scripts/quality_score.py scripts/R/analysis.R --summary
+    python scripts/quality_score.py scripts/R/*.R
+    python scripts/quality_score.py paper.tex
 """
 
 import sys
@@ -24,28 +23,6 @@ import json
 # ==============================================================================
 # SCORING RUBRIC (from .claude/rules/quality-gates.md)
 # ==============================================================================
-
-QUARTO_RUBRIC = {
-    'critical': {
-        'compilation_failure': {'points': 100, 'auto_fail': True},
-        'equation_overflow': {'points': 20},
-        'broken_citation': {'points': 15},
-        'typo_in_equation': {'points': 10},
-        'missing_plotly_chart': {'points': 10},
-    },
-    'major': {
-        'text_overflow': {'points': 5},
-        'tikz_label_overlap': {'points': 5},
-        'notation_inconsistency': {'points': 3},
-        'missing_box_separation': {'points': 2},
-        'color_contrast_low': {'points': 3},
-    },
-    'minor': {
-        'font_size_reduction': {'points': 1},
-        'missing_forward_ref': {'points': 1},
-        'missing_framing_sentence': {'points': 1},
-    }
-}
 
 R_SCRIPT_RUBRIC = {
     'critical': {
@@ -64,18 +41,16 @@ R_SCRIPT_RUBRIC = {
     }
 }
 
-BEAMER_RUBRIC = {
+LATEX_RUBRIC = {
     'critical': {
         'compilation_failure': {'points': 100, 'auto_fail': True},
         'undefined_citation': {'points': 15},
-        'overfull_hbox': {'points': 10},
     },
     'major': {
-        'text_overflow': {'points': 5},
         'notation_inconsistency': {'points': 3},
     },
     'minor': {
-        'font_size_reduction': {'points': 1},
+        'long_lines': {'points': 1},
     }
 }
 
@@ -91,127 +66,6 @@ THRESHOLDS = {
 
 class IssueDetector:
     """Detect common issues for quality scoring."""
-
-    @staticmethod
-    def check_quarto_compilation(filepath: Path) -> Tuple[bool, str]:
-        """Check if Quarto file compiles successfully."""
-        try:
-            result = subprocess.run(
-                ['quarto', 'render', str(filepath), '--to', 'html'],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                cwd=filepath.parent
-            )
-            if result.returncode != 0:
-                return False, result.stderr
-            return True, ""
-        except subprocess.TimeoutExpired:
-            return False, "Compilation timeout (>2min)"
-        except FileNotFoundError:
-            return False, "Quarto not installed"
-
-    @staticmethod
-    def check_equation_overflow(content: str) -> List[int]:
-        """Detect displayed equations with single lines likely to overflow.
-
-        Flags equations only when a SINGLE LINE within a math block exceeds
-        120 characters. Multi-line equations properly broken across lines
-        are not flagged even if the total block is long.
-
-        Checks:
-        - $$ ... $$ blocks (Quarto/LaTeX)
-        - \\begin{equation} ... \\end{equation} blocks
-        - \\begin{align} ... \\end{align} blocks
-        - \\begin{gather} ... \\end{gather} blocks
-        """
-        overflows = []
-        lines = content.split('\n')
-        in_math = False
-        math_start = 0
-        math_delim = None  # Track which delimiter opened the block
-
-        for i, line in enumerate(lines, 1):
-            stripped = line.strip()
-
-            # Check for $$ delimiter (toggle)
-            if '$$' in stripped and math_delim != 'env':
-                if not in_math:
-                    in_math = True
-                    math_start = i
-                    math_delim = '$$'
-                    # Handle single-line $$ ... $$ (both delimiters on same line)
-                    if stripped.count('$$') >= 2:
-                        inner = stripped.split('$$')[1]
-                        if len(inner.strip()) > 120:
-                            overflows.append(i)
-                        in_math = False
-                        math_delim = None
-                    continue
-                else:
-                    in_math = False
-                    math_delim = None
-                    continue
-
-            # Check for \begin{equation/align/gather/...}
-            env_begin = re.match(
-                r'\\begin\{(equation|align|gather|multline|eqnarray)\*?\}', stripped
-            )
-            if env_begin and not in_math:
-                in_math = True
-                math_start = i
-                math_delim = 'env'
-                continue
-
-            # Check for \end{equation/align/gather/...}
-            if re.match(r'\\end\{(equation|align|gather|multline|eqnarray)\*?\}', stripped):
-                in_math = False
-                math_delim = None
-                continue
-
-            # Inside a math block: check individual line length
-            if in_math:
-                # Strip LaTeX comments before measuring
-                code_part = line.split('%')[0] if '%' in line else line
-                if len(code_part.strip()) > 120:
-                    overflows.append(i)
-
-        return overflows
-
-    @staticmethod
-    def check_broken_citations(content: str, bib_file: Path) -> List[str]:
-        """Check for LaTeX citation keys not in bibliography.
-
-        Matches \\cite{}, \\citep{}, \\citet{}, \\citeauthor{}, \\citeyear{}, etc.
-        """
-        cite_pattern = r'\\cite[a-z]*\{([^}]+)\}'
-        cited_keys = set()
-        for match in re.finditer(cite_pattern, content):
-            keys = match.group(1).split(',')
-            cited_keys.update(k.strip() for k in keys)
-
-        if not bib_file.exists():
-            return list(cited_keys)
-
-        bib_content = bib_file.read_text(encoding='utf-8')
-        bib_keys = set(re.findall(r'@\w+\{([^,]+),', bib_content))
-
-        broken = cited_keys - bib_keys
-        return list(broken)
-
-    @staticmethod
-    def check_plotly_widgets(html_file: Path, expected: int = None) -> Tuple[int, bool]:
-        """Check if plotly charts rendered in HTML."""
-        if not html_file.exists():
-            return 0, False
-
-        html_content = html_file.read_text(encoding='utf-8')
-        actual_count = html_content.count('htmlwidget')
-
-        if expected is None:
-            return actual_count, True
-
-        return actual_count, (actual_count >= expected)
 
     @staticmethod
     def check_r_syntax(filepath: Path) -> Tuple[bool, str]:
@@ -245,28 +99,39 @@ class IssueDetector:
         return issues
 
     @staticmethod
-    def check_latex_syntax(content: str) -> List[Dict]:
-        """Check for common LaTeX syntax issues without compiling.
+    def check_broken_citations(content: str, bib_file: Path) -> List[str]:
+        """Check for LaTeX citation keys not in bibliography."""
+        cite_pattern = r'\\cite[a-z]*\{([^}]+)\}'
+        cited_keys = set()
+        for match in re.finditer(cite_pattern, content):
+            keys = match.group(1).split(',')
+            cited_keys.update(k.strip() for k in keys)
 
-        Looks for:
-        - Unmatched braces
-        - Unclosed environments
-        - Common typos in commands
-        """
+        if not cited_keys:
+            return []
+
+        if not bib_file.exists():
+            return list(cited_keys)
+
+        bib_content = bib_file.read_text(encoding='utf-8')
+        bib_keys = set(re.findall(r'@\w+\{([^,]+),', bib_content))
+
+        broken = cited_keys - bib_keys
+        return list(broken)
+
+    @staticmethod
+    def check_latex_syntax(content: str) -> List[Dict]:
+        """Check for common LaTeX syntax issues without compiling."""
         issues = []
         lines = content.split('\n')
 
-        # Track open environments
         env_stack = []
         for i, line in enumerate(lines, 1):
-            # Skip comments
             stripped = line.split('%')[0] if '%' in line else line
 
-            # Check for \begin{env}
             for match in re.finditer(r'\\begin\{(\w+)\}', stripped):
                 env_stack.append((match.group(1), i))
 
-            # Check for \end{env}
             for match in re.finditer(r'\\end\{(\w+)\}', stripped):
                 env_name = match.group(1)
                 if env_stack and env_stack[-1][0] == env_name:
@@ -284,7 +149,6 @@ class IssueDetector:
                         'description': f'\\end{{{env_name}}} without matching \\begin',
                     })
 
-        # Report unclosed environments
         for env_name, line_num in env_stack:
             issues.append({
                 'line': line_num,
@@ -293,84 +157,12 @@ class IssueDetector:
 
         return issues
 
-    @staticmethod
-    def check_overfull_hbox_risk(content: str) -> List[int]:
-        """Detect lines in LaTeX source likely to cause overfull hbox.
-
-        Checks for very long lines inside text and math environments
-        that are likely to overflow the slide width.
-        """
-        issues = []
-        lines = content.split('\n')
-        in_frame = False
-
-        for i, line in enumerate(lines, 1):
-            stripped = line.split('%')[0] if '%' in line else line
-
-            # Track frame environments for context
-            if r'\begin{frame}' in stripped:
-                in_frame = True
-            elif r'\end{frame}' in stripped:
-                in_frame = False
-
-            # Flag very long content lines inside frames
-            # Strip leading whitespace and LaTeX commands for length check
-            if in_frame and len(stripped.strip()) > 120:
-                # Skip lines that are just comments or common long commands
-                if stripped.strip().startswith('%'):
-                    continue
-                # Skip includegraphics, input, and similar path-based commands
-                if re.match(r'\s*\\(includegraphics|input|bibliography|usepackage)', stripped):
-                    continue
-                issues.append(i)
-
-        return issues
-
-    @staticmethod
-    def check_quarto_citations(content: str, bib_file: Path) -> List[str]:
-        """Check Quarto-style citation keys against bibliography.
-
-        Supports patterns: @key, [@key], [@key1; @key2]
-        """
-        cited_keys = set()
-
-        # Pattern 1: [@key] or [@key1; @key2; ...]
-        bracket_pattern = r'\[([^\]]*@[^\]]+)\]'
-        for match in re.finditer(bracket_pattern, content):
-            inner = match.group(1)
-            # Extract individual @key references from within brackets
-            for key_match in re.finditer(r'@([\w:.#$%&\-+?<>~/]+)', inner):
-                cited_keys.add(key_match.group(1))
-
-        # Pattern 2: standalone @key (not inside brackets, not email addresses)
-        # Match @key that is preceded by start-of-line or whitespace or punctuation
-        # but NOT preceded by characters that indicate an email address
-        standalone_pattern = r'(?<![.\w])@([\w:.#$%&\-+?<>~/]+)'
-        for match in re.finditer(standalone_pattern, content):
-            key = match.group(1)
-            # Skip if it looks like a Quarto directive or special syntax
-            if key.startswith('{') or key in ('fig', 'tbl', 'sec', 'eq', 'lst'):
-                continue
-            cited_keys.add(key)
-
-        if not cited_keys:
-            return []
-
-        if not bib_file.exists():
-            return list(cited_keys)
-
-        bib_content = bib_file.read_text(encoding='utf-8')
-        bib_keys = set(re.findall(r'@\w+\{([^,]+),', bib_content))
-
-        broken = cited_keys - bib_keys
-        return list(broken)
-
 # ==============================================================================
 # QUALITY SCORER
 # ==============================================================================
 
 class QualityScorer:
-    """Calculate quality scores for course materials."""
+    """Calculate quality scores for research materials."""
 
     def __init__(self, filepath: Path, verbose: bool = False):
         self.filepath = filepath
@@ -382,69 +174,6 @@ class QualityScorer:
             'minor': []
         }
         self.auto_fail = False
-
-    def score_quarto(self) -> Dict:
-        """Score Quarto lecture slides."""
-        content = self.filepath.read_text(encoding='utf-8')
-
-        # Check compilation
-        compiles, error = IssueDetector.check_quarto_compilation(self.filepath)
-        if not compiles:
-            self.auto_fail = True
-            self.issues['critical'].append({
-                'type': 'compilation_failure',
-                'description': 'Quarto compilation failed',
-                'details': error[:200],
-                'points': 100
-            })
-            self.score = 0
-            return self._generate_report()
-
-        # Check equation overflow (heuristic)
-        equation_overflows = IssueDetector.check_equation_overflow(content)
-        for line in equation_overflows:
-            self.issues['critical'].append({
-                'type': 'equation_overflow',
-                'description': f'Potential equation overflow at line {line}',
-                'details': 'Single equation line >120 chars may overflow slide',
-                'points': 20
-            })
-            self.score -= 20
-
-        # Check broken citations (LaTeX-style \cite patterns)
-        bib_file = self.filepath.parent.parent / 'Bibliography_base.bib'
-        broken_citations = IssueDetector.check_broken_citations(content, bib_file)
-
-        # Also check Quarto-style @key citations
-        quarto_broken = IssueDetector.check_quarto_citations(content, bib_file)
-        # Merge both sets, avoiding duplicates
-        all_broken = set(broken_citations) | set(quarto_broken)
-        for key in all_broken:
-            self.issues['critical'].append({
-                'type': 'broken_citation',
-                'description': f'Citation key not in bibliography: {key}',
-                'details': 'Add to Bibliography_base.bib or fix key',
-                'points': 15
-            })
-            self.score -= 15
-
-        # Check plotly widgets (if HTML exists)
-        html_file = self.filepath.parent.parent / 'docs' / 'slides' / self.filepath.with_suffix('.html').name
-        if html_file.exists():
-            widget_count, _ = IssueDetector.check_plotly_widgets(html_file)
-            expected_plotly = content.count('plotly::plot_ly')
-            if expected_plotly > 0 and widget_count < expected_plotly:
-                missing = expected_plotly - widget_count
-                self.issues['critical'].append({
-                    'type': 'missing_plotly_chart',
-                    'description': f'{missing} plotly chart(s) failed to render',
-                    'details': f'Expected {expected_plotly}, found {widget_count}',
-                    'points': 10 * missing
-                })
-                self.score -= 10 * missing
-
-        self.score = max(0, self.score)
-        return self._generate_report()
 
     def score_r_script(self) -> Dict:
         """Score R script quality."""
@@ -489,14 +218,13 @@ class QualityScorer:
         self.score = max(0, self.score)
         return self._generate_report()
 
-    def score_beamer(self) -> Dict:
-        """Score Beamer/LaTeX lecture slides."""
+    def score_latex(self) -> Dict:
+        """Score LaTeX document."""
         content = self.filepath.read_text(encoding='utf-8')
 
         # Check for LaTeX syntax issues (without compiling)
         syntax_issues = IssueDetector.check_latex_syntax(content)
         if syntax_issues:
-            # Mismatched environments are treated as compilation risk
             for issue in syntax_issues:
                 self.issues['critical'].append({
                     'type': 'compilation_failure',
@@ -508,10 +236,9 @@ class QualityScorer:
             self.score = 0
             return self._generate_report()
 
-        # Check for undefined/broken citations (\cite, \citep, \citet patterns)
+        # Check for broken citations
         bib_file = self.filepath.parent.parent / 'Bibliography_base.bib'
         if not bib_file.exists():
-            # Also check same directory
             bib_file = self.filepath.parent / 'Bibliography_base.bib'
         broken_citations = IssueDetector.check_broken_citations(content, bib_file)
         for key in broken_citations:
@@ -522,28 +249,6 @@ class QualityScorer:
                 'points': 15
             })
             self.score -= 15
-
-        # Check for lines likely to cause overfull hbox
-        overfull_lines = IssueDetector.check_overfull_hbox_risk(content)
-        for line in overfull_lines:
-            self.issues['critical'].append({
-                'type': 'overfull_hbox',
-                'description': f'Potential overfull hbox at line {line}',
-                'details': 'Line >120 chars inside frame may overflow slide width',
-                'points': 10
-            })
-            self.score -= 10
-
-        # Check equation overflow (same heuristic as Quarto)
-        equation_overflows = IssueDetector.check_equation_overflow(content)
-        for line_num in equation_overflows:
-            self.issues['critical'].append({
-                'type': 'overfull_hbox',
-                'description': f'Potential equation overflow at line {line_num}',
-                'details': 'Single equation line >120 chars likely to overflow',
-                'points': 10
-            })
-            self.score -= 10
 
         self.score = max(0, self.score)
         return self._generate_report()
@@ -672,27 +377,24 @@ class QualityScorer:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Calculate quality scores for course materials',
+        description='Calculate quality scores for research materials',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Score a single Quarto file
-  python scripts/quality_score.py Quarto/Lecture6_Topic.qmd
-
-  # Score multiple files
-  python scripts/quality_score.py Quarto/*.qmd
-
-  # Score a Beamer/LaTeX file
-  python scripts/quality_score.py Slides/Lecture01_Topic.tex
-
   # Score an R script
-  python scripts/quality_score.py scripts/R/Lecture06_simulations.R
+  python scripts/quality_score.py scripts/R/analysis.R
+
+  # Score multiple R files
+  python scripts/quality_score.py scripts/R/*.R
+
+  # Score a LaTeX paper
+  python scripts/quality_score.py paper.tex
 
   # Summary only (no detailed issues)
-  python scripts/quality_score.py Quarto/Lecture6.qmd --summary
+  python scripts/quality_score.py scripts/R/analysis.R --summary
 
   # Verbose output (include minor issues)
-  python scripts/quality_score.py Quarto/Lecture6.qmd --verbose
+  python scripts/quality_score.py scripts/R/analysis.R --verbose
 
 Quality Thresholds:
   80/100 = Commit threshold (blocks if below)
@@ -725,12 +427,10 @@ Exit Codes:
         try:
             scorer = QualityScorer(filepath, verbose=args.verbose)
 
-            if filepath.suffix == '.qmd':
-                report = scorer.score_quarto()
-            elif filepath.suffix == '.R':
+            if filepath.suffix == '.R':
                 report = scorer.score_r_script()
             elif filepath.suffix == '.tex':
-                report = scorer.score_beamer()
+                report = scorer.score_latex()
             else:
                 print(f"Error: Unsupported file type: {filepath.suffix}")
                 continue

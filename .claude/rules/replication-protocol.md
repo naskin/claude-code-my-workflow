@@ -23,10 +23,10 @@ Before writing any R code:
 
 | Target | Table/Figure | Value | SE/CI | Notes |
 |--------|-------------|-------|-------|-------|
-| Main ATT | Table 2, Col 3 | -1.632 | (0.584) | Primary specification |
+| Main estimate | Table 2, Col 3 | -1.632 | (0.584) | Primary specification |
 ```
 
-- [ ] Store targets in `quality_reports/LectureNN_replication_targets.md` or as RDS
+- [ ] Store targets in `quality_reports/replication_targets_[paper].md` or as RDS
 
 ---
 
@@ -37,16 +37,16 @@ Before writing any R code:
 - [ ] Match original specification exactly (covariates, sample, clustering, SE computation)
 - [ ] Save all intermediate results as RDS
 
-### Stata to R Translation Pitfalls
+### Common Translation Pitfalls
 
-<!-- Customize: Add pitfalls specific to your field -->
+<!-- Customize: Add pitfalls specific to your field and source languages -->
 
-| Stata | R | Trap |
+| Source | R Equivalent | Trap |
 |-------|---|------|
-| `reg y x, cluster(id)` | `feols(y ~ x, cluster = ~id)` | Stata clusters df-adjust differently from some R packages |
-| `areg y x, absorb(id)` | `feols(y ~ x \| id)` | Check demeaning method matches |
-| `probit` for PS | `glm(family=binomial(link="probit"))` | R default logit != Stata default in some commands |
-| `bootstrap, reps(999)` | Depends on method | Match seed, reps, and bootstrap type exactly |
+| Stata `reg y x, cluster(id)` | `feols(y ~ x, cluster = ~id)` | Stata clusters df-adjust differently from some R packages |
+| Stata `areg y x, absorb(id)` | `feols(y ~ x \| id)` | Check demeaning method matches |
+| Python `statsmodels OLS` | `lm()` or `feols()` | Check default SE computation differs |
+| SAS `PROC REG` | `lm()` | Weight handling may differ |
 
 ---
 
@@ -68,12 +68,12 @@ Before writing any R code:
 
 ### Replication Report
 
-Save to `quality_reports/LectureNN_replication_report.md`:
+Save to `quality_reports/replication_report_[paper].md`:
 
 ```markdown
 # Replication Report: [Paper Author (Year)]
 **Date:** [YYYY-MM-DD]
-**Original language:** [Stata/R/etc.]
+**Original language:** [Stata/R/Python/SAS/etc.]
 **R translation:** [script path]
 
 ## Summary
@@ -99,5 +99,5 @@ Save to `quality_reports/LectureNN_replication_report.md`:
 After replication is verified (all targets PASS):
 
 - [ ] Commit replication script: "Replicate [Paper] Table X -- all targets match"
-- [ ] Now extend with course-specific modifications (different estimators, new figures, etc.)
+- [ ] Now extend with project-specific modifications (different estimators, new figures, etc.)
 - [ ] Each extension builds on the verified baseline
