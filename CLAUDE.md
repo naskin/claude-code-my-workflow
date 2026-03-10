@@ -4,8 +4,40 @@
      Keep this file under ~150 lines — Claude loads it every session. -->
 
 **Project:** [YOUR PROJECT NAME]
-**Institution:** [YOUR INSTITUTION]
+**Author:** Noah Askin
+**Institution:** UC-Irvine, Organization & Management
 **Branch:** main
+
+---
+
+## About the Researcher
+
+**Field:** Organizational sociology / computational social science
+**Core themes:** Optimal differentiation, status dynamics, creativity & recognition, cultural markets, authenticity, social networks, gender & creative production, market structure & innovation
+**Approach:** Theoretically grounded but practically applicable; bridges sociology and management; empirically rigorous with large-scale data
+**Venues:** ASR, ASQ, PNAS, and management/sociology outlets
+**Teaching:** Management, creativity, networks, leadership, OB/OT — to PhD, MBA, undergrad, and executive audiences
+
+---
+
+## Working Preferences
+
+- **R:** tidyverse ecosystem; ggplot2 with minimal themes (`theme_minimal()` or similar)
+- **Citations:** APA format
+- **Writing voice:** Match Noah's prior publications -- direct, clear, sociologically informed but accessible; avoid jargon for jargon's sake
+- **Reporting:** Concise bullet-point summaries where possible; details on request
+- **Tone:** Be direct. Skip the flattery and filler.
+- **Presentations:** Gamma or PowerPoint
+
+---
+
+## Methodological Toolkit
+
+- **Computational methods:** Cosine similarity, Word2Vec/Song2Vec embeddings, t-SNE, algorithmic feature extraction
+- **Econometrics:** Fixed-effects panel models, DiD/DDD, instrumental variables
+- **Data types:** Large-scale digital trace data (streaming logs, chart data, MusicBrainz metadata), audio features (Echo Nest/Spotify API)
+- **Novelty measurement:** Feature-distance approaches with rolling comparison windows
+- **Visualization:** Data-forward plots, progressive reveal of regression results, t-SNE feature maps
 
 ---
 
