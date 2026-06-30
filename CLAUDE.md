@@ -10,6 +10,23 @@
 
 ---
 
+## First-Run Setup (new clone — do once)
+
+On a fresh clone, before real work begins:
+
+1. **Fill in the project fields** above (`[YOUR PROJECT NAME]`, institution) and the *Current Project State* table below.
+2. **Activate the commit-time quality gate** — git hooks are *not* cloned, so run once:
+   ```bash
+   scripts/install-hooks.sh      # sets core.hooksPath → .githooks (skip if already set)
+   ```
+3. **(Optional) Verify wiring:** `scripts/validate-setup.sh`
+
+> Everything else — skills, agents, rules, and the Claude Code hooks in `.claude/settings.json` — is committed and works automatically on clone; no activation needed.
+>
+> **Claude:** at session start, if `git config core.hooksPath` is unset, offer to run step 2. Once it returns `.githooks`, treat setup as done and stay silent.
+
+---
+
 ## About the Researcher
 
 **Field:** Organizational sociology / computational social science

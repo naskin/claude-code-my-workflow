@@ -13,7 +13,10 @@
 ```bash
 git clone https://github.com/YOUR_USERNAME/my-repo.git my-project
 cd my-project
+scripts/install-hooks.sh      # one-time: activates the commit-time quality gate
 ```
+
+> Skills, agents, rules, and Claude Code hooks work automatically on clone. The only manual step is `install-hooks.sh`, because git's `core.hooksPath` is local config and never travels with a clone. (Optional: `scripts/validate-setup.sh` to confirm everything is wired.)
 
 ### 2. Start Claude Code
 
