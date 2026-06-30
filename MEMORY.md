@@ -50,3 +50,9 @@ When a mistake is corrected, append a `[LEARN:category]` entry below.
 [LEARN:meta] Repository dual nature requires explicit governance: what's generic (commit) vs specific (gitignore) → prevents template pollution.
 
 [LEARN:meta] Template development work doesn't create session logs in quality_reports/ → those are for user work (analysis, papers), not meta-work.
+
+## Upstream Sync
+
+[LEARN:infra] 2026-06-30 — Curated sync from upstream pedrohcgs/claude-code-my-workflow (v1.7→v2.1): pulled 115 new tool files (skills/agents/rules/scripts/templates) via per-path `git checkout upstream/main -- <paths>`, deliberately skipping the teaching subsystem and repo infra (.github/CI, CHANGELOG, etc.). Conflict-prone strategy (full merge) avoided because this fork DELETED the Quarto/Beamer subsystem upstream kept developing — a plain merge would resurrect it. `upstream` remote = https://github.com/pedrohcgs/claude-code-my-workflow.git.
+
+[LEARN:infra] 2026-06-30 — Wired two new hooks into .claude/settings.json: git-guardrails.py (PreToolUse — blocks destructive git: reset --hard, clean -f, push --force, blanket `git add .`) and claim-reconcile.py (PostToolUse — flags stale numeric claims when analysis scripts change; fires only if a quality_reports/passports/*.yaml exists). Other hooks were already wired.

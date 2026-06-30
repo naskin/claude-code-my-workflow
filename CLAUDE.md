@@ -107,6 +107,25 @@ python3 scripts/quality_score.py scripts/R/filename.R
 | `/context-status` | Show session health + context usage |
 | `/deep-audit` | Repository-wide consistency audit |
 
+### Newly available (synced from upstream, v1.7→v2.1)
+
+| Command | What It Does |
+|---------|-------------|
+| `/humanize` | Detect & strip AI-tells from academic prose |
+| `/seven-pass-review` | Submission-ready manuscript review (7 lenses) |
+| `/respond-to-referees` | Draft a response-to-referees memo |
+| `/verify-claims` | Verify numeric/factual claims against sources |
+| `/audit-reproducibility` | Check that manuscript numbers match code outputs |
+| `/replication-package` | Assemble a replication package |
+| `/did-event-study` | Difference-in-differences / event-study (Sant'Anna standard) |
+| `/power-analysis` | Statistical power / sample-size calculation |
+| `/simulation-study` | Monte Carlo simulation study |
+| `/stata-replication` | Stata replication workflow |
+| `/preregister` | Build a preregistration document |
+| `/grant-proposal` | Draft a grant proposal |
+| `/new-diagram` | Generate a TikZ diagram from a snippet library |
+| `/checkpoint` · `/compress-session` · `/diagnose` · `/promote-memory` | Session/workflow management |
+
 ---
 
 ## Current Project State
