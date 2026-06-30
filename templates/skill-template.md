@@ -79,6 +79,79 @@ Step 3: [Final action and verification]
 
 ---
 
+## Advanced Frontmatter Fields
+
+Beyond the basic fields shown above, skills support additional YAML frontmatter for fine-grained control:
+
+| Field | Purpose | Example |
+|-------|---------|---------|
+| `effort` | Override reasoning effort level | `high` (for review skills), `low` (for formatting) |
+| `context` | Set to `fork` to run in an isolated subagent context | Protects main conversation from verbose output |
+| `agent` | Link to an agent definition in `.claude/agents/` | `proofreader` |
+| `hooks` | Skill-specific hooks (same syntax as settings.json) | Custom pre/post actions |
+| `model` | Force a specific model | `haiku` (cheaper), `opus` (smarter) |
+| `disable-model-invocation` | Prevent Claude from auto-triggering | `true` (only invoked via `/skill-name`) |
+| `disallowed-tools` | **Remove** tools from Claude's pool while the skill is active — the actual restriction mechanism (see the semantics note below) | `["Edit", "Write"]` for a read-only audit |
+| `paths` | Glob patterns that scope when the skill auto-activates — the skill-level analogue of path-scoped rules | `["scripts/**/*.R"]` |
+| `when_to_use` | Extra routing context for auto-invocation, beyond the description | `"after any merge conflict"` |
+| `arguments` | Named positional arguments for `$name` substitution in the body | `[infile, outfile]` |
+
+### `allowed-tools` vs `disallowed-tools` — the semantics matter {#allowed-vs-disallowed}
+
+**`allowed-tools` is a pre-approval list, not a sandbox.** Per the official docs: it "grants permission for the listed tools while the skill is active, so Claude can use them without prompting you for approval. **It does not restrict which tools are available: every tool remains callable**" — unlisted tools just go through your normal permission settings. Omitting `Bash` from `allowed-tools` does **not** make a skill read-only.
+
+**To actually remove tools, use `disallowed-tools`.** Tools listed there are taken out of Claude's available pool while the skill is active (the restriction clears on your next message). For autonomous or forked review skills that must never write — or never stall a background loop on a question — disallow explicitly:
+
+```yaml
+allowed-tools: ["Read", "Grep", "Glob"]        # pre-approve the read path (no prompts)
+disallowed-tools: ["Edit", "Write", "Bash"]    # actually remove the write path
+```
+
+**Dynamic content** — skills can include live data using string substitutions:
+
+- `$ARGUMENTS` — full argument string (e.g., `/skill-name Lecture01` → `Lecture01`)
+- `$0`, `$1` — positional arguments (0-based)
+- `${CLAUDE_SKILL_DIR}` — path to the skill's directory (for bundled supporting files)
+- `` `!git log --oneline -5` `` — dynamic command output injected when skill loads
+
+See the [guide's Skill Frontmatter Reference](https://psantanna.com/claude-code-my-workflow/workflow-guide.html#skill-frontmatter) for details and examples.
+
+### When to set `disable-model-invocation: true` {#when-to-disable-model-invocation}
+
+Set this flag whenever the skill writes a **persistent, load-bearing file** that the user must explicitly intend to create. Otherwise, Claude may auto-trigger the skill in response to a vaguely-matching prompt and produce a file that's hard to undo without manual cleanup.
+
+**Set it for skills that:**
+
+- Create new persistent source files (`/create-lecture` → new `.tex`, `/new-diagram` → new TikZ source).
+- Write a self-modifying artifact (`/learn` → new SKILL.md, `/checkpoint` → state snapshot, `/preregister` → preregistration document).
+- Run a destructive cycle (`/deep-audit` → repo-wide fix loop).
+
+**Don't set it for skills that:**
+
+- Produce transient analysis output (`/proofread`, `/review-r`, `/visual-audit` — write reports under `quality_reports/` that are easy to delete).
+- Are read-only diagnostics (`/permission-check`, `/context-status`).
+- Compile / render / deploy from existing source (`/compile-latex`, `/deploy`, `/extract-tikz`).
+
+The flag still allows direct invocation as `/skill-name` — it only blocks the model from auto-triggering on a heuristic match.
+
+### CLAUDE.md `@import` syntax (Anthropic Apr 2026)
+
+Anthropic's `CLAUDE.md` supports `@path/to/import` to pull in additional files. Example:
+
+```markdown
+See @README.md for project overview and @package.json for available commands.
+
+# Personal overrides
+@~/.claude/my-project-instructions.md
+
+# Domain-specific instructions
+@docs/git-instructions.md
+```
+
+**This template's `CLAUDE.md` deliberately does NOT use `@import`** — at 146 lines it's already lean, and importing fragments fractures the onboarding context (forkers expect "one file to load at session start"). Mention this here for forkers whose customization grows large enough to warrant splitting; for short CLAUDE.md files, splitting tends to hurt more than help.
+
+---
+
 ## Writing Effective Descriptions
 
 The `description` field determines when Claude loads your skill. Use this structure:
@@ -369,7 +442,7 @@ When adapting this template to your domain:
 | `Bash` | Running commands (R scripts, LaTeX compilation, git) |
 | `Task` | Launching subagents (for complex multi-step workflows) |
 
-**Security note:** Only grant `Bash` access if your skill needs to execute code or compile documents. For read-only validation skills, omit it.
+**Security note:** `allowed-tools` only pre-approves — it does **not** restrict (see [the semantics note](#allowed-vs-disallowed)). For a genuinely read-only validation skill, add `disallowed-tools: ["Edit", "Write", "Bash"]`; for autonomous/background skills, also disallow `AskUserQuestion` so the loop can't stall on a prompt. Listing only what you use in `allowed-tools` is still good hygiene (it documents intent and minimizes silent pre-approvals), but it is not a sandbox.
 
 ---
 
@@ -379,4 +452,4 @@ When adapting this template to your domain:
 - **Purpose:** Starter for domain-specific skills
 - **Usage:** Copy to `.claude/skills/[name]/SKILL.md`, customize for your field
 
-For existing skills examples, see `.claude/skills/` directory (22 skills for LaTeX, R, Quarto, and research workflows).
+For existing skills examples, see `.claude/skills/` directory (52 skills for LaTeX, R, Quarto, and research workflows).
