@@ -12,18 +12,12 @@
 
 ## First-Run Setup (new clone — do once)
 
-On a fresh clone, before real work begins:
+1. Fill in the `[BRACKETED]` project fields above and the *Current Project State* table below.
+2. Activate the commit-time quality gate (git hooks are not cloned): `scripts/install-hooks.sh`
+3. (Optional) Verify wiring: `scripts/validate-setup.sh`
 
-1. **Fill in the project fields** above (`[YOUR PROJECT NAME]`, institution) and the *Current Project State* table below.
-2. **Activate the commit-time quality gate** — git hooks are *not* cloned, so run once:
-   ```bash
-   scripts/install-hooks.sh      # sets core.hooksPath → .githooks (skip if already set)
-   ```
-3. **(Optional) Verify wiring:** `scripts/validate-setup.sh`
-
-> Everything else — skills, agents, rules, and the Claude Code hooks in `.claude/settings.json` — is committed and works automatically on clone; no activation needed.
->
-> **Claude:** at session start, if `git config core.hooksPath` is unset, offer to run step 2. Once it returns `.githooks`, treat setup as done and stay silent.
+> Skills, agents, rules, and the hooks in `.claude/settings.json` are committed and work automatically on clone.
+> **Claude:** at session start, if `git config core.hooksPath` is unset, offer to run step 2; once it returns `.githooks`, treat setup as done and stay silent.
 
 ---
 
@@ -62,7 +56,7 @@ On a fresh clone, before real work begins:
 
 - **Plan first** -- enter plan mode before non-trivial tasks; save plans to `quality_reports/plans/`
 - **Verify after** -- run scripts and confirm output at the end of every task
-- **Quality gates** -- nothing ships below 80/100
+- **Quality gates** -- 80 = commit · 90 = PR · 95 = excellence; nothing ships below 80/100
 - **[LEARN] tags** -- when corrected, save `[LEARN:category] wrong → right` to MEMORY.md
 
 ---
@@ -87,61 +81,21 @@ On a fresh clone, before real work begins:
 ## Commands
 
 ```bash
-# R scripts
-Rscript scripts/R/filename.R
-
-# Quality score
-python3 scripts/quality_score.py scripts/R/filename.R
+Rscript scripts/R/filename.R                            # run an R script
+python3 scripts/quality_score.py scripts/R/filename.R   # quality score
 ```
-
----
-
-## Quality Thresholds
-
-| Score | Gate | Meaning |
-|-------|------|---------|
-| 80 | Commit | Good enough to save |
-| 90 | PR | Ready for deployment |
-| 95 | Excellence | Aspirational |
 
 ---
 
 ## Skills Quick Reference
 
-| Command | What It Does |
-|---------|-------------|
-| `/proofread [file]` | Grammar/typo/consistency review |
-| `/review-r [file]` | R code quality review |
-| `/review-paper [file]` | Manuscript review (social science) |
-| `/review-presentation [file]` | Presentation review (narrative, design, rigor) |
-| `/create-presentation [topic]` | Build Gamma or PowerPoint presentation |
-| `/data-analysis [dataset]` | End-to-end R analysis |
-| `/lit-review [topic]` | Literature search + synthesis |
-| `/research-ideation [topic]` | Research questions + strategies |
-| `/interview-me [topic]` | Interactive research interview |
-| `/commit [msg]` | Stage, commit, PR, merge |
-| `/learn [skill-name]` | Extract discovery into persistent skill |
-| `/context-status` | Show session health + context usage |
-| `/deep-audit` | Repository-wide consistency audit |
+Each skill self-describes on invocation; grouped by purpose:
 
-### Newly available (synced from upstream, v1.7→v2.1)
-
-| Command | What It Does |
-|---------|-------------|
-| `/humanize` | Detect & strip AI-tells from academic prose |
-| `/seven-pass-review` | Submission-ready manuscript review (7 lenses) |
-| `/respond-to-referees` | Draft a response-to-referees memo |
-| `/verify-claims` | Verify numeric/factual claims against sources |
-| `/audit-reproducibility` | Check that manuscript numbers match code outputs |
-| `/replication-package` | Assemble a replication package |
-| `/did-event-study` | Difference-in-differences / event-study (Sant'Anna standard) |
-| `/power-analysis` | Statistical power / sample-size calculation |
-| `/simulation-study` | Monte Carlo simulation study |
-| `/stata-replication` | Stata replication workflow |
-| `/preregister` | Build a preregistration document |
-| `/grant-proposal` | Draft a grant proposal |
-| `/new-diagram` | Generate a TikZ diagram from a snippet library |
-| `/checkpoint` · `/compress-session` · `/diagnose` · `/promote-memory` | Session/workflow management |
+- **Review & writing:** `/proofread` · `/review-paper` · `/review-r` · `/review-presentation` · `/humanize` · `/seven-pass-review` · `/respond-to-referees` · `/verify-claims`
+- **Research & analysis:** `/data-analysis` · `/lit-review` · `/research-ideation` · `/interview-me` · `/did-event-study` · `/power-analysis` · `/simulation-study` · `/stata-replication`
+- **Reproducibility & submission:** `/audit-reproducibility` · `/replication-package` · `/preregister` · `/grant-proposal`
+- **Presentations & figures:** `/create-presentation` · `/new-diagram`
+- **Workflow:** `/commit` · `/learn` · `/deep-audit` · `/context-status` · `/checkpoint` · `/compress-session` · `/diagnose` · `/promote-memory`
 
 ---
 
