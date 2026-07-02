@@ -44,7 +44,7 @@ On a fresh clone, before real work begins:
 - **Writing voice:** Match Noah's prior publications -- direct, clear, sociologically informed but accessible; avoid jargon for jargon's sake
 - **Reporting:** Concise bullet-point summaries where possible; details on request
 - **Tone:** Be direct. Skip the flattery and filler.
-- **Presentations:** Gamma or PowerPoint
+- **Presentations:** Gamma or PowerPoint — PPTX palettes & slide builders in `scripts/pptx_helpers.py` (`NSASlidesV2` = current family; `NSASlides` = legacy)
 
 ---
 
