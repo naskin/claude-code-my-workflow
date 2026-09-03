@@ -73,11 +73,20 @@ def main() -> int:
                     default=Path(__file__).resolve().parent.parent / "Quarto" / "theme-template.scss")
     args = ap.parse_args()
 
-    if not args.latex.exists():
-        print(f"ERROR: {args.latex} not found.", file=sys.stderr)
+    # This fork carries no Beamer preamble or Quarto theme, so there is no
+    # palette to keep in sync. Absent inputs are "not applicable", not a
+    # failure — only a half-present pair (one file but not the other) is a
+    # real problem worth reporting.
+    have_latex, have_scss = args.latex.exists(), args.scss.exists()
+    if not have_latex and not have_scss:
+        print("palette sync: N/A — no Preambles/header.tex or Quarto theme in "
+              "this repo (nothing to keep in sync).")
+        return 0
+    if not have_latex:
+        print(f"ERROR: {args.scss} exists but {args.latex} not found.", file=sys.stderr)
         return 2
-    if not args.scss.exists():
-        print(f"ERROR: {args.scss} not found.", file=sys.stderr)
+    if not have_scss:
+        print(f"ERROR: {args.latex} exists but {args.scss} not found.", file=sys.stderr)
         return 2
 
     latex = parse_latex(args.latex)

@@ -99,7 +99,7 @@ else
 fi
 
 echo ""
-echo -e "${BOLD}Git pre-commit gate (v2.0):${RESET}"
+echo -e "${BOLD}Git pre-commit gate:${RESET}"
 pchook="$(dirname "$0")/../.githooks/pre-commit"
 if [ -f "$pchook" ]; then
     if [ -x "$pchook" ]; then
@@ -119,14 +119,20 @@ if [ -f "$pchook" ]; then
         fi
     fi
 else
-    echo -e "  ${YELLOW}⚠${RESET} .githooks/pre-commit not found"
-    warn=$((warn + 1))
+    # Not shipped in this fork by design — quality scoring runs inside
+    # /commit. Report it, but do not count it as a problem to fix.
+    echo -e "  ${BOLD}·${RESET} not shipped in this repo — quality scoring runs inside /commit"
 fi
 echo ""
 
 echo -e "${BOLD}Palette sync (LaTeX ↔ SCSS):${RESET}"
 palette_script="$(dirname "$0")/check-palette-sync.sh"
-if [ -x "$palette_script" ]; then
+palette_latex="$(dirname "$0")/../Preambles/header.tex"
+palette_scss="$(dirname "$0")/../Quarto/theme-template.scss"
+if [ ! -f "$palette_latex" ] && [ ! -f "$palette_scss" ]; then
+    # No Beamer preamble and no Quarto theme: nothing to keep in sync.
+    echo -e "  ${BOLD}·${RESET} N/A — no LaTeX preamble or Quarto theme in this repo"
+elif [ -x "$palette_script" ]; then
     # Rely on the helper's exit code — stable contract, not text matching.
     # 0 = in sync, 1 = divergence.
     if "$palette_script" >/dev/null 2>&1; then

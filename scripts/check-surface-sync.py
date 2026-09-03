@@ -211,11 +211,17 @@ def main() -> int:
     rel = lambda p: p.relative_to(REPO)
     drift: list[str] = []
 
-    # Sanity: every surface file listed must exist.
-    missing = [p for p in SURFACES if not p.exists()]
-    if missing:
-        for p in missing:
-            print(f"ERROR: surface file missing: {rel(p)}", file=sys.stderr)
+    # Surfaces are scanned if present. A fork that removes a subsystem (this
+    # one dropped the Quarto guide) should not fail the gate for surfaces it
+    # deliberately does not carry — an absent file asserts no counts, so it
+    # cannot drift. Only a repo with NO surfaces left is an error.
+    surfaces = [p for p in SURFACES if p.exists()]
+    for p in SURFACES:
+        if not p.exists():
+            print(f"note: surface not in this repo, skipping: {rel(p)}")
+    if not surfaces:
+        print("ERROR: none of the known surface files exist — wrong repo root?",
+              file=sys.stderr)
         return 2
 
     print("Ground truth (counted from disk):")
@@ -224,7 +230,7 @@ def main() -> int:
     print()
 
     per_file: dict[Path, list[tuple[int, str, int, str]]] = {}
-    for path in SURFACES:
+    for path in surfaces:
         per_file[path] = scan_file(path)
 
     for path, hits in per_file.items():
@@ -240,7 +246,7 @@ def main() -> int:
 
     # Enumerative-table row-count assertions (marker-driven).
     table_hits = 0
-    for path in SURFACES:
+    for path in surfaces:
         for lineno, kind, count, raw in scan_tables(path):
             table_hits += 1
             if kind not in GROUND_TRUTH:
@@ -278,7 +284,7 @@ def main() -> int:
 
     total_assertions = sum(len(v) for v in per_file.values())
     print(f"All {total_assertions} count assertions + {table_hits} enumerative-"
-          f"table row counts match ground truth across {len(SURFACES)} surfaces.")
+          f"table row counts match ground truth across {len(surfaces)} surfaces.")
     return 0
 
 

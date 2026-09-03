@@ -13,11 +13,10 @@
 ## First-Run Setup (new clone — do once)
 
 1. Fill in the `[BRACKETED]` project fields above and the *Current Project State* table below.
-2. Activate the commit-time quality gate (git hooks are not cloned): `scripts/install-hooks.sh`
-3. (Optional) Verify wiring: `scripts/validate-setup.sh`
+2. (Optional) Verify wiring: `scripts/validate-setup.sh`
 
-> Skills, agents, rules, and the hooks in `.claude/settings.json` are committed and work automatically on clone.
-> **Claude:** at session start, if `git config core.hooksPath` is unset, offer to run step 2; once it returns `.githooks`, treat setup as done and stay silent.
+> Skills, agents, rules, and the hooks in `.claude/settings.json` are committed and work automatically on clone — there is no install step.
+> Clone the project *before* starting Claude Code in it: a session resolves `$CLAUDE_PROJECT_DIR` once, at launch, so a session that moves into a new repo mid-run must be restarted for hooks to resolve.
 
 ---
 

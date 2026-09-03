@@ -13,8 +13,12 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
 if [ ! -d .githooks ]; then
-    echo "install-hooks: .githooks/ not found at repo root" >&2
-    exit 1
+    echo "install-hooks: no .githooks/ in this repo — nothing to install."
+    echo "  This fork does not ship a commit-time gate: the same quality"
+    echo "  scoring runs inside the /commit skill, which is where the review"
+    echo "  loop already lives. Nothing is broken; you can ignore this."
+    echo "  (If you later pull .githooks/ from upstream, re-run this script.)"
+    exit 0
 fi
 
 chmod +x .githooks/* 2>/dev/null || true
