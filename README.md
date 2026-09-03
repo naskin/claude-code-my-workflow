@@ -13,10 +13,11 @@
 ```bash
 git clone https://github.com/YOUR_USERNAME/my-repo.git my-project
 cd my-project
-scripts/install-hooks.sh      # one-time: activates the commit-time quality gate
 ```
 
-> Skills, agents, rules, and Claude Code hooks work automatically on clone. The only manual step is `install-hooks.sh`, because git's `core.hooksPath` is local config and never travels with a clone. (Optional: `scripts/validate-setup.sh` to confirm everything is wired.)
+> Skills, agents, rules, and Claude Code hooks are committed and work automatically on clone — there is no install step. (Optional: `scripts/validate-setup.sh` to confirm everything is wired.)
+>
+> **Clone before you start Claude Code, not after.** A running session resolves `$CLAUDE_PROJECT_DIR` once, at launch. If you create or move into the project from inside a session that started somewhere else, its hooks keep resolving against the old path — so start (or restart) Claude Code in the project folder.
 
 ### 2. Start Claude Code
 
@@ -76,7 +77,7 @@ Plans, specifications, and session logs survive auto-compression and session bou
 ## What's Included
 
 <details>
-<summary><strong>5 agents, 13 skills, 10 rules, 7 hooks, 7 templates</strong> (click to expand)</summary>
+<summary><strong>13 agents, 41 skills, 26 rules, 9 hooks, 13 templates</strong> (click to expand)</summary>
 
 ### Agents (`.claude/agents/`)
 
