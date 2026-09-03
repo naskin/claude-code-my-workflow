@@ -81,6 +81,40 @@ else
 fi
 echo ""
 
+# A fork's `gh` defaults to the PARENT repo, so `gh pr create` will open the
+# PR against someone else's project unless a default is pinned. That default
+# lives in .git/config, so it does NOT survive a fresh clone — check it here.
+echo -e "${BOLD}GitHub default repo (fork safety):${RESET}"
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+    # Resolve OUR repo from the origin remote, never from `gh repo view` alone:
+    # in an unpinned fork, gh's own resolution returns the PARENT, which would
+    # make this check pass in exactly the situation it exists to catch.
+    origin_slug="$(git remote get-url origin 2>/dev/null \
+        | sed -E 's#(git@|https://)github\.com[:/]##; s#\.git$##' || true)"
+    # What would `gh pr create` actually target from this clone?
+    gh_target="$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null || true)"
+    parent_repo="$(gh api "repos/${origin_slug}" --jq '.parent.full_name // empty' 2>/dev/null || true)"
+
+    if [ -z "$origin_slug" ] || [ -z "$gh_target" ]; then
+        echo -e "  ${BOLD}·${RESET} skipped — no GitHub origin remote to check"
+    elif [ "$gh_target" = "$origin_slug" ]; then
+        if [ -n "$parent_repo" ]; then
+            echo -e "  ${GREEN}✓${RESET} fork of ${parent_repo}, but gh targets ${origin_slug}"
+        else
+            echo -e "  ${GREEN}✓${RESET} not a fork — no parent to target by mistake"
+        fi
+        pass=$((pass + 1))
+    else
+        echo -e "  ${RED}✗${RESET} gh would target ${gh_target}, NOT your repo ${origin_slug}"
+        echo -e "    'gh pr create' here opens a PR against someone else's project"
+        echo -e "    Fix: gh repo set-default ${origin_slug}"
+        fail=$((fail + 1))
+    fi
+else
+    echo -e "  ${BOLD}·${RESET} skipped — gh not installed or not authenticated"
+fi
+echo ""
+
 echo -e "${BOLD}Claude Code hooks:${RESET}"
 hook_dir="$(dirname "$0")/../.claude/hooks"
 if [ -d "$hook_dir" ]; then

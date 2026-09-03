@@ -75,7 +75,14 @@ EOF
 
 ```bash
 git push -u origin <branch-name>
-gh pr create --title "<short title>" --body "$(cat <<'EOF'
+
+# In a FORK, `gh` defaults the PR base to the PARENT repo — so an unpinned
+# `gh pr create` opens the PR against someone else's project. Always pin the
+# target to origin, and reuse it for the merge in Step 6.
+ORIGIN_REPO="$(git remote get-url origin | sed -E 's#(git@|https://)github\.com[:/]##; s#\.git$##')"
+
+gh pr create --repo "$ORIGIN_REPO" --base main --head <branch-name> \
+  --title "<short title>" --body "$(cat <<'EOF'
 ## Summary
 <1-3 bullet points>
 
@@ -87,10 +94,13 @@ EOF
 )"
 ```
 
+Confirm the returned URL is under your own account before continuing. If it is
+not, close that PR immediately and re-create it with the correct `--repo`.
+
 ### Step 6: Merge and clean up
 
 ```bash
-gh pr merge <pr-number> --merge --delete-branch
+gh pr merge <pr-number> --repo "$ORIGIN_REPO" --merge --delete-branch
 git checkout main
 git pull
 ```
@@ -103,6 +113,7 @@ Report the PR URL and what was merged.
 
 - **Never skip Step 0.** Quality gates catch broken compilation, bad citations, and hardcoded paths before they reach `main`. If the user insists on skipping, record their override reason in the commit message.
 - Always create a NEW branch — never commit directly to main.
+- **Never open a PR against a fork's parent.** `gh pr create` targets the parent by default in a fork; pass `--repo` pinned to `origin` (above). Opening a PR pushes your work onto someone else's project — treat a wrong-repo PR as an incident: close it with an explanatory comment, then re-open correctly.
 - Exclude `settings.local.json` and sensitive files from staging.
 - Use `--merge` (not `--squash` or `--rebase`) unless asked otherwise.
 - If the commit message from `$ARGUMENTS` is provided, use it exactly.

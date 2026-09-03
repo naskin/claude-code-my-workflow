@@ -13,7 +13,8 @@
 ## First-Run Setup (new clone — do once)
 
 1. Fill in the `[BRACKETED]` project fields above and the *Current Project State* table below.
-2. (Optional) Verify wiring: `scripts/validate-setup.sh`
+2. If this repo is a **fork**: `gh repo set-default <your-account>/<repo>` — otherwise `gh pr create` targets the parent. Per clone; `.git/config` never travels with a clone.
+3. (Optional) Verify wiring: `scripts/validate-setup.sh`
 
 > Skills, agents, rules, and the hooks in `.claude/settings.json` are committed and work automatically on clone — there is no install step.
 > Clone the project *before* starting Claude Code in it: a session resolves `$CLAUDE_PROJECT_DIR` once, at launch, so a session that moves into a new repo mid-run must be restarted for hooks to resolve.
